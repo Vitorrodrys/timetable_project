@@ -1,0 +1,28 @@
+
+services:
+  api:
+    image: api
+    ports:
+      - "8000:8000"
+    env_file: test.env
+    command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    restart: always
+    image: postgres:17.5
+    ports:
+    - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    volumes:
+    - db_data:/var/lib/postgresql/data:rw
+    env_file: test.env
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  db_data:
