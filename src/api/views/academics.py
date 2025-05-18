@@ -4,7 +4,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from api.utils import excel_handler
+from api.excel_importer import CourseCurriculumImporter, TeachingPlanImporter
 
 from .serializers import ExcelFileSerializer
 
@@ -12,6 +12,7 @@ from .serializers import ExcelFileSerializer
 class CourseCurriculumViewSet(GenericAPIView):
     serializer_class = ExcelFileSerializer
     parser_classes = [MultiPartParser]
+    importer = CourseCurriculumImporter()
 
     @extend_schema(
         request={
@@ -37,12 +38,10 @@ class CourseCurriculumViewSet(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         course_curriculums = serializer.validated_data["files"]
         errors = []
-        for filename, curriculum in course_curriculums:
-            imported, import_status = excel_handler.import_course_curriculum(
-                curriculum["Sheet"]
-            )
+        for file in course_curriculums:
+            imported, import_status = self.importer.import_data(file)
             if not imported:
-                errors.append((filename, import_status))
+                errors.append((file.name, import_status))
         if errors:
             error_messages = [
                 f"File: {file_name} - Error: {error}" for file_name, error in errors
@@ -59,6 +58,7 @@ class CourseCurriculumViewSet(GenericAPIView):
 class TeachingPlanViewSet(GenericAPIView):
     serializer_class = ExcelFileSerializer
     parser_classes = [MultiPartParser]
+    importer = TeachingPlanImporter()
 
     @extend_schema(
         request={
@@ -84,10 +84,10 @@ class TeachingPlanViewSet(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         teaching_plans = serializer.validated_data["files"]
         errors = []
-        for filename, teaching_plan in teaching_plans:
-            imported, import_status = excel_handler.import_teaching_plan(teaching_plan)
+        for file in teaching_plans:
+            imported, import_status = self.importer.import_data(file)
             if not imported:
-                errors.append((filename, import_status))
+                errors.append((file.name, import_status))
         if errors:
             error_messages = [
                 f"File: {file_name} - Error: {error}" for file_name, error in errors

@@ -10,9 +10,9 @@ class ExcelFileSerializer(serializers.Serializer):
         validated_files = []
         for file in value:
             try:
-                validated_files.append(
-                    (file.name, pandas.read_excel(file, sheet_name=None))
-                )
+                # only validate if the file is a valid Excel file
+                pandas.read_excel(file, sheet_name=None)
+                validated_files.append(file)
             except (ValueError, InvalidFileException) as e:
                 raise serializers.ValidationError(
                     f"Invalid file format: {file.name}. Please upload a valid Excel file."
