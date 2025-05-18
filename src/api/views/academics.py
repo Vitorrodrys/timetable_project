@@ -37,12 +37,12 @@ class CourseCurriculumViewSet(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         course_curriculums = serializer.validated_data["files"]
         errors = []
-        for curriculum in course_curriculums:
+        for filename, curriculum in course_curriculums:
             imported, import_status = excel_handler.import_course_curriculum(
                 curriculum["Sheet"]
             )
             if not imported:
-                errors.append((curriculum.name, import_status))
+                errors.append((filename, import_status))
         if errors:
             error_messages = [
                 f"File: {file_name} - Error: {error}" for file_name, error in errors
@@ -84,10 +84,10 @@ class TeachingPlanViewSet(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         teaching_plans = serializer.validated_data["files"]
         errors = []
-        for teaching_plan in teaching_plans:
+        for filename, teaching_plan in teaching_plans:
             imported, import_status = excel_handler.import_teaching_plan(teaching_plan)
             if not imported:
-                errors.append((teaching_plan.name, import_status))
+                errors.append((filename, import_status))
         if errors:
             error_messages = [
                 f"File: {file_name} - Error: {error}" for file_name, error in errors

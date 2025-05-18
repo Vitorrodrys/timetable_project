@@ -6,8 +6,15 @@ import pandas
 
 from api import models
 
+
 def _fix_column_names(df: pandas.DataFrame) -> None:
-    new_cols = [next(column_name for column_name in df.columns if not re.match(r"Unnamed: \d+", column_name))]
+    new_cols = [
+        next(
+            column_name
+            for column_name in df.columns
+            if not re.match(r"Unnamed: \d+", column_name)
+        )
+    ]
     for col in df.columns[1:]:
         col = col.strip()
         if re.match(r"Unnamed: \d+", col):
@@ -15,6 +22,11 @@ def _fix_column_names(df: pandas.DataFrame) -> None:
         else:
             new_cols.append(col)
     df.columns = new_cols
+
+
+def _remove_na(df: pandas.DataFrame) -> None:
+    for _, subdf in df.items():
+        subdf.fillna("", inplace=True)
 
 
 def _course_curriculum_atomic_import(course_curriculum: pandas.DataFrame):
@@ -48,9 +60,9 @@ def _course_curriculum_atomic_import(course_curriculum: pandas.DataFrame):
     course_curriculum.fillna("", inplace=True)
     course_curriculum.columns = [f"col{i}" for i in range(course_curriculum.shape[1])]
     for _, row in course_curriculum.iterrows():
-        discipline_code = row['col5'] or row['col6'] or ""
-        discipline_name = row['col9'] or row['col10'] or ""
-        discipline_workload = row['col11'] or row['col12'] or ""
+        discipline_code = row["col5"] or row["col6"] or ""
+        discipline_name = row["col9"] or row["col10"] or ""
+        discipline_workload = row["col11"] or row["col12"] or ""
         discipline_code = discipline_code.strip()
         discipline_name = discipline_name.strip()
         if discipline_code == "" or discipline_name == "":
@@ -65,14 +77,21 @@ def _course_curriculum_atomic_import(course_curriculum: pandas.DataFrame):
                 "code": discipline_code,
                 "name": discipline_name,
                 "school_class": db_class,
-                "workload": discipline_workload
+                "workload": discipline_workload,
             },
         )
         if created:
-            logging.debug("Discipline %s - %s imported successfully.", discipline_code, discipline_name)
+            logging.debug(
+                "Discipline %s - %s imported successfully.",
+                discipline_code,
+                discipline_name,
+            )
         else:
-            logging.debug("Discipline %s - %s already exists.", discipline_code, discipline_name)
+            logging.debug(
+                "Discipline %s - %s already exists.", discipline_code, discipline_name
+            )
     return True, "Course curriculum imported successfully."
+
 
 def import_course_curriculum(course_curriculum: pandas.DataFrame) -> tuple[bool, str]:
     """
@@ -90,7 +109,7 @@ def import_course_curriculum(course_curriculum: pandas.DataFrame) -> tuple[bool,
 
 
 def _environments_atomic_import(teaching_plan: pandas.DataFrame):
-    for environment in teaching_plan['AMBIENTE']:
+    for environment in teaching_plan["AMBIENTE"]:
         environment = environment.strip()
         if environment == "":
             # Skip empty rows
@@ -103,12 +122,13 @@ def _environments_atomic_import(teaching_plan: pandas.DataFrame):
         )
         logging.debug("Importing environment: %s", environment)
 
+
 def _professor_atomic_import(teaching_plan: pandas.DataFrame):
-    professors_df = teaching_plan['PROFESSORES']
+    professors_df = teaching_plan["PROFESSORES"]
     new_headers = professors_df.iloc[0]
     professors_df = professors_df[1:].copy()
     professors_df.columns = new_headers
-    for professor_name in professors_df['NOME COMPLETO']:
+    for professor_name in professors_df["NOME COMPLETO"]:
         professor_name = professor_name.strip()
         if professor_name == "":
             # Skip empty rows
@@ -122,11 +142,9 @@ def _professor_atomic_import(teaching_plan: pandas.DataFrame):
         if created:
             logging.debug("Importing professor: %s", professor_name)
 
+
 def _teaching_plan_atomic_import(teaching_plan: pandas.DataFrame):
-    iterator = zip(
-        teaching_plan['COD. DISCIPLINA'],
-        teaching_plan['PROFESSOR']
-    )
+    iterator = zip(teaching_plan["COD. DISCIPLINA"], teaching_plan["PROFESSOR"])
     for discipline_code, professor in iterator:
         discipline_code = discipline_code.strip()
         professor = professor.strip()
@@ -134,7 +152,9 @@ def _teaching_plan_atomic_import(teaching_plan: pandas.DataFrame):
             continue
 
         db_discipline = models.Discipline.objects.filter(code=discipline_code).first()
-        logging.debug("Assigning professor %s to discipline %s", professor, discipline_code)
+        logging.debug(
+            "Assigning professor %s to discipline %s", professor, discipline_code
+        )
         if not db_discipline:
             logging.warning("Discipline %s not found in the database.", discipline_code)
             raise ValueError(f"Discipline {discipline_code} not found.")
@@ -158,15 +178,17 @@ def import_teaching_plan(
     The teaching plan file specifies the disciplines that each professor
     will teach in a given semester.
     """
-    for _, df in teaching_plan.items():
-        df.fillna("", inplace=True)
-    _fix_column_names(teaching_plan['NÃO DELETAR'])
-    _fix_column_names(teaching_plan['Disciplinas oferta 2024.1'])
+    _remove_na(teaching_plan)
     try:
+        _fix_column_names(teaching_plan["NÃO DELETAR"])
+        _fix_column_names(teaching_plan["Disciplinas oferta 2024.1"])
         with transaction.atomic():
-            _environments_atomic_import(teaching_plan['NÃO DELETAR'])
-            _professor_atomic_import(teaching_plan['NÃO DELETAR'])
-            _teaching_plan_atomic_import(teaching_plan['Disciplinas oferta 2024.1'])
+            _environments_atomic_import(teaching_plan["NÃO DELETAR"])
+            _professor_atomic_import(teaching_plan["NÃO DELETAR"])
+            _teaching_plan_atomic_import(teaching_plan["Disciplinas oferta 2024.1"])
             return True, "Teaching plan imported successfully."
+    except KeyError as e:
+        logging.error("KeyError: %s", e)
+        return False, "Invalid file format. Please check the file."
     except ValueError as e:
         return False, str(e)
