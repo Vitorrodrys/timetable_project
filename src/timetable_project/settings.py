@@ -26,6 +26,31 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": os.getenv("GLOBAL_LOG_LEVEL", "DEBUG"),
+    },
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Timetable API",
+    "DESCRIPTION": "timetable project's API",
+    "VERSION": "0.1.0",
+    "SERVE_INCLUDE_SCHEMA": True
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -33,6 +58,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "api"
 ]
 
