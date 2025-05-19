@@ -4,6 +4,7 @@ from typing import IO
 
 from django.db import transaction
 import pandas
+from openpyxl.utils.exceptions import InvalidFileException
 
 from api import models
 
@@ -93,3 +94,8 @@ class CourseCurriculumImporter(ExcelImporter):
                 return True, "Course curriculum imported successfully."
         except ValueError as e:
             return False, str(e)
+        except InvalidFileException:
+            return (
+                False,
+                f"Invalid file format: {readbable_buffer.name}, please check the file",
+            )

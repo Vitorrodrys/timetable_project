@@ -1,7 +1,9 @@
-from django.db import transaction
 import logging
-import pandas
 from typing import IO
+
+from django.db import transaction
+from openpyxl.utils.exceptions import InvalidFileException
+import pandas
 
 from api import models
 
@@ -94,3 +96,8 @@ class TeachingPlanImporter(ExcelImporter):
             return False, "Invalid file format. Please check the file."
         except ValueError as e:
             return False, str(e)
+        except InvalidFileException:
+            return (
+                False,
+                f"Invalid file format: {readbable_buffer.name}, please check the file",
+            )
