@@ -1,19 +1,18 @@
 from abc import ABC, abstractmethod
 
 from api.models import Course, Discipline, Environment
+from api.solvers.local_search import LocalSearch
+from api.solvers.solution import Solution
 
-from .solution import Solution
 
-class Solver(ABC):
-
+class ConstructiveSolver(ABC):
     @abstractmethod
-    def solve(
+    def build(
         self,
         courses: list[Course],
         disciplines: list[Discipline],
         environments: list[Environment],
+        *,
+        local_search: LocalSearch | None = None,
     ) -> Solution:
-        """
-        Should calculate and return a timetable solution
-        based on the given courses, disciplines and environments.
-        """
+        pass
