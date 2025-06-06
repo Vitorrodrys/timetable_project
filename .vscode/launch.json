@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "cwd": "${workspaceFolder}/src",
+        "name": "excel parser",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "solver.main",
+        "args": [
+          "excel_reader",
+          "-tpd", "../dados-horarios-aulas/planejamento/",
+          "-ccd", "../dados-horarios-aulas/matrizes-curriculares/"
+
+        ]
+      },
+      {
+        "cwd": "${workspaceFolder}/src",
+        "name": "Python: Django",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/src/manage.py",
+        "args": [
+          "runserver",
+          "0.0.0.0:8000"
+        ],
+        "django": true,
+        "env": {
+          "DJANGO_SETTINGS_MODULE": "timetable_project.settings"
+        },
+        "console": "integratedTerminal",
+        "justMyCode": true
+      }
+    ]
+  }
+  
